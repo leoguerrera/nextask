@@ -1,12 +1,12 @@
 # NexTask
 
-Gerenciador de projetos pessoal que roda direto no browser. Sem instalação, sem conta, sem servidor — um único arquivo `.html`.
+Gerenciador de projetos pessoal que roda direto no browser. Sem instalação, sem conta, sem servidor. Um único arquivo `.html`.
 
 ![Dashboard do NexTask](dashboard.jpg)
 
 Construído para resolver um problema específico: manter contexto de projetos entre conversas com IAs. O fluxo é preencher uma planilha Excel, importar no app, acompanhar o andamento e exportar um resumo em texto para jogar no início de cada sessão com a IA. O contexto fica preservado de uma sessão pra outra, além de ter um acompanhamento de cada etapa do projeto para documentar ao final.
 
-O projeto começou como um artefato dentro do Claude. Quando as limitações apareceram — sem persistência entre sessões, sem exportação de arquivos — a solução foi migrar para HTML standalone. Isso resolveu tudo e ainda tornou a ferramenta fácil de compartilhar: basta abrir o arquivo no browser.
+O projeto começou como um artefato dentro do Claude. Quando as limitações apareceram sem persistência entre sessões, sem exportação de arquivos e a solução foi migrar para HTML standalone. Isso resolveu tudo e ainda tornou a ferramenta fácil de compartilhar: basta abrir o arquivo no browser.
 
 ---
 

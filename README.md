@@ -2,7 +2,7 @@
 
 Gerenciador de projetos pessoal que roda direto no browser. Sem instalação, sem conta, sem servidor — um único arquivo `.html`.
 
-![Dashboard do NexTask](prints/dashboard.jpg)
+![Dashboard do NexTask](dashboard.jpg)
 
 Construído para resolver um problema específico: manter contexto de projetos entre conversas com IAs. O fluxo é preencher uma planilha Excel, importar no app, acompanhar o andamento e exportar um resumo em texto para jogar no início de cada sessão com a IA. O contexto fica preservado de uma sessão pra outra, além de ter um acompanhamento de cada etapa do projeto para documentar ao final.
 
@@ -12,9 +12,9 @@ O projeto começou como um artefato dentro do Claude. Quando as limitações apa
 
 ## Screenshots
 
-![Lista de tarefas](prints/tarefas.jpg)
+![Lista de tarefas](tarefas.jpg)
 
-![Matriz de riscos](prints/riscos.jpg)
+![Matriz de riscos](riscos.jpg)
 
 ---
 

@@ -1,0 +1,2043 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>NexTask — Gerenciador Profissional de Projetos</title>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Crimson+Pro:ital,wght@0,400;0,500;0,600;1,400;1,500&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <style>
+    /* ═══════════════════════════════════════════════════════════════════
+       NEXTASTASK PROFESSIONAL PALETTE
+       ──────────────────────────────────────────────────────────────────
+       Fundo:        #F8F6F0 (creme quente claro)
+       Cards:        #FFFFFF (branco limpo)
+       Primária:     #5B8A6F (sálvia - ação, confiança)
+       Secundária:   #C47A5E (terracota suave - destaque)
+       Sucesso:      #3D6B53 (verde floresta)
+       Atenção:      #D9984A (âmbar)
+       Perigo:       #8B3A2C (terracota escuro)
+       Texto prim:   #2C2824 (quase preto quente)
+       Texto sec:    #6E685D (cinza quente, alto contraste)
+       Destaque:     #C9A87C (dourado)
+       Bordas:       #D1CBC0 (cinza bege)
+    ═══════════════════════════════════════════════════════════════════ */
+    
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    
+    body {
+      font-family: 'Crimson Pro', Georgia, 'Times New Roman', serif;
+      background: #F8F6F0;
+      color: #2C2824;
+      min-height: 100vh;
+      padding-bottom: 48px;
+      font-size: 16px;
+      line-height: 1.5;
+    }
+    
+    :focus-visible {
+      outline: 2px solid #5B8A6F;
+      outline-offset: 2px;
+    }
+    
+    input, select, textarea, button {
+      font-family: 'Crimson Pro', Georgia, serif;
+      color: #2C2824;
+    }
+
+    /* ── Header ── */
+    .header {
+      background: #EBE5D9;
+      border-bottom: 1px solid #D1CBC0;
+      padding: 0 20px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .header-inner {
+      max-width: 1100px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 18px 0 14px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .logo { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+    .logo-text {
+      font-family: 'Instrument Serif', Georgia, serif;
+      font-size: 26px;
+      font-weight: 400;
+      letter-spacing: -0.01em;
+      color: #2C2824;
+      font-style: italic;
+    }
+    .logo-text span { color: #5B8A6F; font-style: normal; }
+    .badge {
+      font-family: 'Crimson Pro', serif;
+      font-style: italic;
+      background: none;
+      color: #6E685D;
+      font-size: 13px;
+      padding: 0;
+      letter-spacing: 0;
+    }
+    .badge::before { content: '— '; }
+    .save-indicator {
+      font-size: 13px;
+      color: #5B8A6F;
+      font-style: italic;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      opacity: 0;
+      transition: opacity 0.3s;
+      background: #D1CBC0;
+      padding: 4px 10px;
+    }
+    .save-indicator.show { opacity: 1; }
+    .save-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #3D6B53;
+      animation: pulse 1s ease-in-out;
+    }
+    
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(1.2); }
+    }
+
+    .header-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+    .btn {
+      border: 1px solid #D1CBC0;
+      background: transparent;
+      border-radius: 0;
+      padding: 7px 14px;
+      font-size: 14px;
+      font-weight: 500;
+      color: #2C2824;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      font-family: 'Crimson Pro', serif;
+    }
+    .btn:hover {
+      background: #F8F6F0;
+      border-color: #5B8A6F;
+      transform: translateY(-1px);
+    }
+    .btn:active { transform: translateY(0); }
+    .btn-danger:hover {
+      background: #8B3A2C;
+      color: #FFFFFF;
+      border-color: #8B3A2C;
+    }
+
+    /* ── Layout responsivo ── */
+    .main {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 28px 20px 0;
+    }
+    .card {
+      background: #FFFFFF;
+      border: 1px solid #D1CBC0;
+      padding: 28px 24px;
+      margin-bottom: 24px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+    }
+    .card-sm {
+      background: #FFFFFF;
+      border: 1px solid #D1CBC0;
+      overflow-x: auto;
+    }
+    .row { display: flex; gap: 24px; flex-wrap: wrap; margin-bottom: 20px; }
+    .col-2 { flex: 2; min-width: 200px; }
+    .col-1 { flex: 1; min-width: 120px; }
+
+    /* ── Labels e inputs ── */
+    label.field-label {
+      display: block;
+      font-family: 'Instrument Serif', serif;
+      font-size: 11px;
+      font-weight: 400;
+      font-style: italic;
+      color: #6E685D;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+    .inline-edit-span {
+      cursor: text;
+      border-bottom: 2px solid transparent;
+      padding-bottom: 2px;
+      display: inline-block;
+      min-width: 60px;
+      transition: all 0.2s;
+      font-weight: 500;
+    }
+    .inline-edit-span:hover { 
+      border-bottom-color: #5B8A6F;
+      background: rgba(91, 138, 111, 0.05);
+    }
+    .inline-edit-span.placeholder {
+      color: #D1CBC0;
+      font-style: italic;
+      font-weight: 400;
+    }
+    .inline-edit-input, .inline-edit-textarea {
+      border: 1px solid #5B8A6F;
+      padding: 6px 10px;
+      outline: none;
+      background: #FFFFFF;
+      width: 100%;
+      font-family: 'Crimson Pro', serif;
+      font-size: inherit;
+      font-weight: 500;
+    }
+    .inline-edit-textarea { resize: vertical; }
+    .select-edit-span {
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      padding-bottom: 2px;
+      transition: all 0.2s;
+      font-weight: 500;
+    }
+    .select-edit-span:hover { 
+      border-bottom-color: #5B8A6F;
+      background: rgba(91, 138, 111, 0.05);
+    }
+    .select-edit-select {
+      border: 1px solid #5B8A6F;
+      padding: 4px 8px;
+      outline: none;
+      background: #FFFFFF;
+      font-family: 'Crimson Pro', serif;
+      font-weight: 500;
+    }
+    .date-input {
+      border: 1px solid #D1CBC0;
+      padding: 6px 10px;
+      font-size: 14px;
+      color: #2C2824;
+      background: #FFFFFF;
+      outline: none;
+      font-family: 'Crimson Pro', serif;
+      transition: all 0.15s;
+    }
+    .date-input:hover { border-color: #5B8A6F; background: #F8F6F0; }
+    .date-input:focus { border-color: #5B8A6F; box-shadow: 0 0 0 2px rgba(91, 138, 111, 0.2); }
+
+    /* ── Date pills ── */
+    .date-wrapper { position: relative; display: inline-block; }
+    .date-pills {
+      display: none;
+      position: absolute;
+      top: -40px;
+      left: 0;
+      background: #FFFFFF;
+      border: 1px solid #D1CBC0;
+      padding: 6px;
+      gap: 6px;
+      z-index: 10;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    .date-wrapper:focus-within .date-pills { display: flex; }
+    .date-pill {
+      font-family: 'Crimson Pro', serif;
+      font-style: italic;
+      font-size: 12px;
+      padding: 4px 10px;
+      background: transparent;
+      color: #2C2824;
+      border: 1px solid #D1CBC0;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.1s;
+    }
+    .date-pill:hover { background: #F8F6F0; border-color: #5B8A6F; }
+
+    /* ── Progress ── */
+    .progress-wrap {
+      background: #EBE5D9;
+      overflow: hidden;
+      width: 100%;
+      position: relative;
+    }
+    .progress-bar {
+      height: 100%;
+      transition: width 0.5s cubic-bezier(.4,0,.2,1);
+      position: relative;
+    }
+
+    /* ── Tabs ── */
+    .tabs {
+      display: flex;
+      gap: 0;
+      margin-bottom: 24px;
+      border-bottom: 2px solid #D1CBC0;
+      width: 100%;
+      flex-wrap: wrap;
+    }
+    .tab-btn {
+      padding: 10px 24px 12px;
+      border: none;
+      cursor: pointer;
+      font-family: 'Crimson Pro', serif;
+      font-size: 16px;
+      font-weight: 500;
+      background: transparent;
+      color: #6E685D;
+      transition: all 0.15s;
+      position: relative;
+      margin-bottom: -2px;
+      font-style: italic;
+    }
+    .tab-btn:hover { color: #2C2824; background: rgba(91, 138, 111, 0.05); }
+    .tab-btn.active {
+      color: #2C2824;
+      font-style: normal;
+      font-weight: 600;
+      border-bottom: 2px solid #5B8A6F;
+    }
+
+    /* ── Search ── */
+    .search-wrap {
+      position: relative;
+      margin-bottom: 16px;
+    }
+    .search-input {
+      width: 100%;
+      border: 1px solid #D1CBC0;
+      padding: 10px 14px 10px 40px;
+      font-size: 15px;
+      outline: none;
+      transition: all 0.15s;
+      background: #FFFFFF;
+      font-family: 'Crimson Pro', serif;
+      font-style: italic;
+      color: #2C2824;
+    }
+    .search-input::placeholder { color: #D1CBC0; font-style: italic; }
+    .search-input:focus { 
+      border-color: #5B8A6F; 
+      font-style: normal;
+      box-shadow: 0 0 0 2px rgba(91, 138, 111, 0.2);
+    }
+    .search-icon {
+      position: absolute;
+      left: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #6E685D;
+      pointer-events: none;
+    }
+
+    /* ── Filter pill ── */
+    .filter-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      background: #EBE5D9;
+      color: #2C2824;
+      font-family: 'Crimson Pro', serif;
+      font-style: italic;
+      font-size: 13px;
+      padding: 6px 14px;
+      margin-bottom: 16px;
+      cursor: pointer;
+      border: 1px solid #D1CBC0;
+      transition: all 0.15s;
+    }
+    .filter-pill:hover { background: #D1CBC0; transform: translateY(-1px); }
+
+    /* ── Container responsivo para tabela de tarefas ── */
+    .tarefas-container {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    
+    /* ── Fases e tarefas ── */
+    .fase-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 16px 20px 16px 12px;
+      cursor: pointer;
+      user-select: none;
+      min-width: min-content;
+    }
+    .fase-header:hover { background: #F8F6F0; }
+    .fase-arrow { 
+      display: inline-flex; 
+      color: #6E685D; 
+      transition: transform 0.2s;
+      flex-shrink: 0;
+    }
+    
+    .tarefas-grid {
+      min-width: 900px;
+    }
+    
+    .tarefa-row {
+      display: grid;
+      grid-template-columns: 40px minmax(180px, 1fr) 140px 160px 110px 130px 40px;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 20px 12px 12px;
+      border-bottom: 1px dashed #EBE5D9;
+      position: relative;
+      transition: background 0.15s;
+    }
+    
+    @media (max-width: 1000px) {
+      .tarefa-row {
+        grid-template-columns: 40px minmax(150px, 1fr) 120px 140px 100px 120px 40px;
+        gap: 8px;
+      }
+    }
+    
+    .tarefa-row:hover { background: #F8F6F0; }
+    .tarefa-row:last-child { border-bottom: none; }
+    .tarefa-col-handle { 
+      display: flex; 
+      align-items: center; 
+      gap: 8px;
+      flex-shrink: 0;
+    }
+    .tarefa-col-nome { 
+      min-width: 0; 
+      overflow: hidden;
+    }
+    .tarefa-col-nome .inline-edit-span {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      display: block;
+    }
+    .tarefa-col-resp { 
+      display: flex; 
+      align-items: center; 
+      gap: 6px; 
+      min-width: 0; 
+      overflow: hidden; 
+    }
+    .tarefa-col-data { 
+      display: flex; 
+      align-items: center; 
+      gap: 8px; 
+      flex-wrap: wrap;
+    }
+    .tarefa-col-prog { 
+      display: flex; 
+      align-items: center; 
+      gap: 8px; 
+    }
+    .tarefa-col-status { 
+      display: flex; 
+      align-items: center; 
+    }
+    .tarefa-col-menu { 
+      display: flex; 
+      align-items: center; 
+      justify-content: flex-end;
+    }
+    .drag-handle {
+      cursor: grab;
+      color: #D1CBC0;
+      user-select: none;
+      display: inline-flex;
+      transition: color 0.15s;
+    }
+    .drag-handle:hover { color: #6E685D; }
+    .drag-handle:active { cursor: grabbing; }
+
+    .icon-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: #D1CBC0;
+      padding: 6px;
+      transition: all 0.15s;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .icon-btn:hover { 
+      color: #8B3A2C;
+      background: rgba(139, 58, 44, 0.1);
+    }
+
+    /* Menu de ações */
+    .actions-menu { position: relative; display: inline-block; }
+    .actions-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: #D1CBC0;
+      padding: 6px;
+      transition: all 0.15s;
+      display: inline-flex;
+      opacity: 0.6;
+    }
+    .actions-btn:hover { 
+      opacity: 1;
+      color: #2C2824;
+      background: rgba(0,0,0,0.05);
+    }
+    .actions-dropdown {
+      position: absolute;
+      right: 0;
+      top: 32px;
+      background: #FFFFFF;
+      border: 1px solid #D1CBC0;
+      padding: 6px;
+      box-shadow: 4px 4px 0 #EBE5D9;
+      z-index: 20;
+      min-width: 180px;
+      display: none;
+    }
+    .actions-dropdown.open { display: block; }
+    .actions-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 12px;
+      font-size: 14px;
+      color: #2C2824;
+      cursor: pointer;
+      font-family: 'Crimson Pro', serif;
+      transition: all 0.1s;
+    }
+    .actions-item:hover { background: #F8F6F0; }
+    .actions-item.danger { color: #8B3A2C; font-style: italic; }
+    .actions-item.danger:hover { background: rgba(139, 58, 44, 0.1); }
+    .actions-sep { height: 1px; background: #EBE5D9; margin: 6px 0; }
+
+    .subtarefa-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 8px 0;
+    }
+    .add-btn {
+      font-family: 'Crimson Pro', serif;
+      font-style: italic;
+      font-size: 14px;
+      color: #5B8A6F;
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 6px 0;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.15s;
+    }
+    .add-btn:hover { 
+      color: #3D6B53;
+      transform: translateX(2px);
+    }
+    .empty-state {
+      padding: 48px 24px;
+      color: #D1CBC0;
+      font-size: 15px;
+      text-align: center;
+      font-style: italic;
+    }
+    .empty-state::before {
+      content: "✨";
+      display: block;
+      font-size: 32px;
+      margin-bottom: 12px;
+      font-style: normal;
+    }
+
+    /* ── Matriz de riscos ── */
+    .risk-matrix {
+      display: grid;
+      grid-template-columns: 90px repeat(3, 1fr);
+      gap: 8px;
+      margin-bottom: 24px;
+      overflow-x: auto;
+    }
+    .matrix-label {
+      font-family: 'Instrument Serif', serif;
+      font-size: 12px;
+      font-style: italic;
+      color: #6E685D;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 8px;
+      text-align: center;
+      font-weight: 500;
+    }
+    .matrix-cell {
+      min-height: 80px;
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      border: 1px solid;
+      transition: transform 0.15s;
+    }
+    .matrix-cell:hover { transform: scale(1.02); z-index: 1; }
+    .matrix-cell.sev-low { background: #EBE5D9; border-color: #D1CBC0; }
+    .matrix-cell.sev-med { background: #F5EDE0; border-color: #C9A87C; }
+    .matrix-cell.sev-high { background: #F5E0D4; border-color: #C47A5E; }
+    .matrix-cell.sev-crit { background: #E8D5D0; border-color: #8B3A2C; }
+    .matrix-risk {
+      font-size: 12px;
+      background: rgba(255, 255, 255, 0.9);
+      padding: 6px 10px;
+      color: #2C2824;
+      line-height: 1.4;
+      cursor: pointer;
+      font-family: 'Crimson Pro', serif;
+      border-left: 3px solid #6E685D;
+      transition: all 0.15s;
+    }
+    .matrix-risk:hover {
+      background: #FFFFFF;
+      transform: translateX(2px);
+    }
+
+    /* ── Próxima ação ── */
+    .next-action {
+      display: flex;
+      align-items: baseline;
+      gap: 16px;
+      padding: 16px 24px;
+      background: #F8F6F0;
+      border-left: 4px solid #5B8A6F;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+    }
+    .next-action-label {
+      font-family: 'Instrument Serif', serif;
+      font-style: italic;
+      font-size: 12px;
+      color: #5B8A6F;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    .btn-start {
+      margin-left: auto;
+      background: #5B8A6F;
+      color: #FFFFFF;
+      border: none;
+      padding: 8px 18px;
+      font-size: 13px;
+      cursor: pointer;
+      font-family: 'Crimson Pro', serif;
+      font-style: italic;
+      transition: all 0.15s;
+    }
+    .btn-start:hover { 
+      background: #3D6B53;
+      transform: translateY(-1px);
+    }
+    .btn-start:active { transform: translateY(0); }
+
+    /* ── Dashboard cards ── */
+    .dash-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 1px;
+      margin-bottom: 24px;
+      background: #D1CBC0;
+      border: 1px solid #D1CBC0;
+    }
+    .dash-card {
+      background: #FFFFFF;
+      border: none;
+      padding: 16px 20px;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-align: left;
+      font-family: 'Crimson Pro', serif;
+      position: relative;
+    }
+    .dash-card:hover { 
+      background: #F8F6F0;
+      transform: translateY(-2px);
+    }
+    .dash-card.active {
+      background: #F8F6F0;
+      border-top: 3px solid #5B8A6F;
+      padding-top: 13px;
+    }
+    .dash-card-value {
+      font-family: 'Instrument Serif', serif;
+      font-size: 32px;
+      font-weight: 400;
+      color: #2C2824;
+      line-height: 1;
+      margin-bottom: 6px;
+    }
+    .dash-card-label {
+      font-size: 13px;
+      color: #6E685D;
+      font-style: italic;
+    }
+    .dash-card.alert.has-value.atrasadas .dash-card-value { color: #D9984A; }
+    .dash-card.alert.has-value.bloqueadas .dash-card-value { color: #8B3A2C; }
+
+    /* ── Toast ── */
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: #2C2824;
+      color: #F8F6F0;
+      padding: 14px 24px;
+      font-size: 15px;
+      font-family: 'Crimson Pro', serif;
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+      z-index: 200;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+    .toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+      pointer-events: auto;
+    }
+    .toast-undo {
+      background: none;
+      border: none;
+      color: #C9A87C;
+      cursor: pointer;
+      font-size: 14px;
+      font-family: 'Crimson Pro', serif;
+      font-style: italic;
+      padding: 4px 8px;
+      text-decoration: underline;
+      transition: color 0.15s;
+    }
+    .toast-undo:hover { color: #FFFFFF; }
+
+    /* ── Status badges ── */
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+      font-family: 'Crimson Pro', serif;
+      font-style: italic;
+      padding: 4px 14px;
+      cursor: pointer;
+      border: 1px solid transparent;
+      transition: all 0.15s;
+      font-weight: 500;
+    }
+    .status-badge:hover { 
+      border-color: currentColor;
+      transform: scale(1.02);
+    }
+
+    /* ── Drag states ── */
+    .drag-over {
+      background: #F8F6F0 !important;
+      border-top: 3px solid #5B8A6F !important;
+      position: relative;
+    }
+    .drag-over::before {
+      content: "↓ Solte aqui ↓";
+      position: absolute;
+      right: 20px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 11px;
+      color: #5B8A6F;
+      font-style: italic;
+      background: white;
+      padding: 2px 8px;
+      pointer-events: none;
+    }
+    .dragging { 
+      opacity: 0.3;
+      cursor: grabbing !important;
+    }
+
+    /* ── Ícones ── */
+    .ico { width: 16px; height: 16px; flex-shrink: 0; }
+    .ico-sm { width: 14px; height: 14px; flex-shrink: 0; }
+
+    /* ── Checkbox ── */
+    input[type="checkbox"] {
+      accent-color: #5B8A6F;
+      width: 18px;
+      height: 18px;
+      cursor: pointer;
+    }
+    
+    /* ── Tooltip ── */
+    [data-tooltip] {
+      position: relative;
+    }
+    [data-tooltip]:hover::after {
+      content: attr(data-tooltip);
+      position: absolute;
+      bottom: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #2C2824;
+      color: #F8F6F0;
+      padding: 4px 8px;
+      font-size: 11px;
+      white-space: nowrap;
+      z-index: 100;
+      margin-bottom: 5px;
+    }
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-inner">
+    <div class="logo">
+      <span class="logo-text">Nex<span>Task</span></span>
+      <span class="badge">v1.7</span>
+      <span class="save-indicator" id="saveIndicator">
+        <span class="save-dot"></span>
+        Salvo
+      </span>
+    </div>
+    <div class="header-actions">
+      <input type="file" id="fileInput" accept=".csv,.xlsx,.xls" style="display:none" aria-label="Importar arquivo" />
+      <button class="btn" onclick="document.getElementById('fileInput').click()" aria-label="Importar CSV ou XLSX" data-tooltip="Importar arquivo">
+        <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        Importar
+      </button>
+      <button class="btn" onclick="exportCSV()" aria-label="Exportar CSV" data-tooltip="Exportar como CSV">
+        <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        CSV
+      </button>
+      <button class="btn" onclick="exportMD()" aria-label="Exportar resumo Markdown" data-tooltip="Exportar resumo">
+        <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+        Resumo
+      </button>
+      <button class="btn btn-danger" onclick="limparProjeto()" aria-label="Limpar projeto" data-tooltip="Limpar tudo">
+        <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-2 14a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg>
+      </button>
+    </div>
+  </div>
+</div>
+
+<div class="main" id="app"></div>
+
+<div class="toast" id="toast">
+  <span id="toastMsg"></span>
+  <button class="toast-undo" id="toastUndo">Desfazer</button>
+</div>
+
+<script>
+/* ═══════════════════════════════════════════════════════════════════
+   NexTask v1.7 — Professional Palette (Terracotta & Sage)
+   Cores profissionais para gestão de projetos
+   ═══════════════════════════════════════════════════════════════════ */
+
+const STATUS_OPTIONS  = ["A fazer", "Em andamento", "Concluída", "Bloqueada"];
+const PROB_OPTIONS    = ["Baixa", "Média", "Alta"];
+const IMPACTO_OPTIONS = ["Baixo", "Médio", "Alto"];
+const FASES_NOMES     = ["Iniciação", "Planejamento", "Execução", "Encerramento"];
+
+// Status colors com a nova paleta
+const statusColor = { 
+  "A fazer": "#6E685D", 
+  "Em andamento": "#5B8A6F", 
+  "Concluída": "#3D6B53", 
+  "Bloqueada": "#8B3A2C" 
+};
+const statusBg = { 
+  "A fazer": "#F8F6F0", 
+  "Em andamento": "#EBE5D9", 
+  "Concluída": "#E0E8E0", 
+  "Bloqueada": "#E8D5D0" 
+};
+
+const ICO = {
+  calendar: '<svg class="ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>',
+  user: '<svg class="ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>',
+  drag: '<svg class="ico-sm" viewBox="0 0 24 24" fill="currentColor"><circle cx="9" cy="6" r="1.5"/><circle cx="9" cy="12" r="1.5"/><circle cx="9" cy="18" r="1.5"/><circle cx="15" cy="6" r="1.5"/><circle cx="15" cy="12" r="1.5"/><circle cx="15" cy="18" r="1.5"/></svg>',
+  chevron: '<svg class="ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>',
+  close: '<svg class="ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="18" x2="18" y2="6"/></svg>',
+  plus: '<svg class="ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>',
+  more: '<svg class="ico-sm" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/></svg>',
+  search: '<svg class="ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>',
+  attach: '<svg class="ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>'
+};
+
+function uid() { return Math.random().toString(36).slice(2, 9); }
+
+function makeInitialData() {
+  return {
+    nome_projeto: "", data_inicio: "", previsao_termino: "", descricao: "", fase_atual: "Iniciação",
+    fases: [
+      { id:"iniciacao",    nome:"Iniciação",    tarefas:[] },
+      { id:"planejamento", nome:"Planejamento", tarefas:[] },
+      { id:"execucao",     nome:"Execução",     tarefas:[] },
+      { id:"encerramento", nome:"Encerramento", tarefas:[] },
+    ],
+    riscos: [], anexos: [],
+  };
+}
+
+function saveToStorage() {
+  try { localStorage.setItem("nextask_data", JSON.stringify(data)); } catch(e) {}
+}
+
+function loadFromStorage() {
+  try {
+    const raw = localStorage.getItem("nextask_data");
+    if (raw) { const parsed = JSON.parse(raw); if (parsed && parsed.fases) return parsed; }
+  } catch(e) {}
+  return null;
+}
+
+let data = loadFromStorage() || makeInitialData();
+let activeTab = "tarefas";
+let expandedFases = { iniciacao:true, planejamento:true, execucao:true, encerramento:true };
+let expandedTarefas = {};
+let dragItem = null;
+let searchQuery = "";
+let statusFilter = null;
+let openActionsMenu = null;
+let undoStack = [];
+
+function snapshot(actionLabel) {
+  undoStack.push({
+    data: JSON.parse(JSON.stringify(data)),
+    label: actionLabel,
+    time: Date.now()
+  });
+  if (undoStack.length > 10) undoStack.shift();
+}
+
+function undo() {
+  if (undoStack.length === 0) return;
+  const prev = undoStack.pop();
+  data = prev.data;
+  render();
+  showSaved();
+}
+
+function showToast(msg, withUndo) {
+  const t = document.getElementById("toast");
+  const m = document.getElementById("toastMsg");
+  const u = document.getElementById("toastUndo");
+  m.textContent = msg;
+  u.style.display = withUndo ? "inline-block" : "none";
+  t.classList.add("show");
+  clearTimeout(window._toastTimer);
+  window._toastTimer = setTimeout(() => t.classList.remove("show"), 4000);
+}
+
+function showSaved() {
+  const el = document.getElementById("saveIndicator");
+  if (!el) return;
+  el.classList.add("show");
+  clearTimeout(window._savedTimer);
+  window._savedTimer = setTimeout(() => el.classList.remove("show"), 2000);
+}
+
+function calcProgresso(tarefas) {
+  if (!tarefas || tarefas.length === 0) return 0;
+  let total = 0, concluidas = 0;
+  tarefas.forEach(t => {
+    if (!t.subtarefas || t.subtarefas.length === 0) {
+      total++; if (t.status === "Concluída") concluidas++;
+    } else {
+      t.subtarefas.forEach(s => { total++; if (s.concluida) concluidas++; });
+    }
+  });
+  return total === 0 ? 0 : Math.round((concluidas / total) * 100);
+}
+
+function calcProgressoGeral() {
+  let total = 0, concluidas = 0;
+  data.fases.forEach(f => f.tarefas.forEach(t => {
+    if (!t.subtarefas || t.subtarefas.length === 0) {
+      total++; if (t.status === "Concluída") concluidas++;
+    } else {
+      t.subtarefas.forEach(s => { total++; if (s.concluida) concluidas++; });
+    }
+  }));
+  return total === 0 ? 0 : Math.round((concluidas / total) * 100);
+}
+
+function calcAtrasadas() {
+  const hoje = new Date(); hoje.setHours(0,0,0,0);
+  let count = 0;
+  data.fases.forEach(f => f.tarefas.forEach(t => {
+    if (t.status !== "Concluída" && t.data_prevista) {
+      const d = new Date(t.data_prevista + "T00:00:00");
+      if (d < hoje) count++;
+    }
+  }));
+  return count;
+}
+
+function isAtrasada(t) {
+  if (!t.data_prevista || t.status === "Concluída") return false;
+  const hoje = new Date(); hoje.setHours(0,0,0,0);
+  return new Date(t.data_prevista + "T00:00:00") < hoje;
+}
+
+function getProximaAcao() {
+  for (const fase of data.fases) {
+    for (const t of fase.tarefas) {
+      if (t.status === "A fazer" || t.status === "Em andamento") {
+        return { tarefa: t, fase: fase.nome, faseId: fase.id };
+      }
+    }
+  }
+  return null;
+}
+
+function render() {
+  saveToStorage();
+  document.getElementById("app").innerHTML = buildApp();
+  bindEvents();
+}
+
+function progressBar(value, height) {
+  height = height || 6;
+  const color = value === 100 ? "#3D6B53" : "#5B8A6F";
+  return '<div class="progress-wrap" style="height:'+height+'px"><div class="progress-bar" style="width:'+value+'%;height:100%;background:'+color+'"></div></div>';
+}
+
+function buildApp() {
+  const prog = calcProgressoGeral();
+  return (
+    buildProjetoCard(prog) +
+    buildTabs() +
+    (activeTab === "tarefas" ? buildTarefas() : "") +
+    (activeTab === "riscos"  ? buildRiscos()  : "") +
+    (activeTab === "anexos"  ? buildAnexos()  : "")
+  );
+}
+
+function buildProjetoCard(prog) {
+  const tarefasFlat = data.fases.flatMap(f => f.tarefas);
+  const counts = {
+    afazer:     tarefasFlat.filter(t => t.status === "A fazer").length,
+    andamento:  tarefasFlat.filter(t => t.status === "Em andamento").length,
+    concluidas: tarefasFlat.filter(t => t.status === "Concluída").length,
+    bloqueadas: tarefasFlat.filter(t => t.status === "Bloqueada").length,
+    atrasadas:  calcAtrasadas()
+  };
+
+  const proximaAcao = getProximaAcao();
+
+  const dashCards = [
+    { key:"afazer",     label:"A fazer",      value: counts.afazer,     filter:"A fazer" },
+    { key:"andamento",  label:"Em andamento", value: counts.andamento,  filter:"Em andamento" },
+    { key:"concluidas", label:"Concluídas",   value: counts.concluidas, filter:"Concluída" },
+    { key:"bloqueadas", label:"Bloqueadas",   value: counts.bloqueadas, filter:"Bloqueada", alert:true },
+    { key:"atrasadas",  label:"Atrasadas",    value: counts.atrasadas,  filter:"atrasadas", alert:true },
+  ];
+
+  return (
+    '<div class="card">' +
+      '<div class="row">' +
+        '<div class="col-2">' +
+          '<label class="field-label">Nome do projeto</label>' +
+          '<span class="inline-edit-span '+(data.nome_projeto?"":"placeholder")+'" style="font-family:\'Instrument Serif\',serif;font-size:34px;font-weight:400;letter-spacing:-0.01em;font-style:italic;color:#2C2824" data-inline-edit="nome_projeto">' +
+            (escHtml(data.nome_projeto) || "Nome do projeto") +
+          '</span>' +
+        '</div>' +
+        '<div class="col-1">' +
+          '<label class="field-label">Fase atual</label>' +
+          '<span class="select-edit-span" style="font-family:\'Crimson Pro\',serif;font-size:16px;font-style:italic;color:#5B8A6F;font-weight:500" data-select-edit="fase_atual" data-options="'+FASES_NOMES.join("|")+'">' +
+            escHtml(data.fase_atual) +
+          '</span>' +
+        '</div>' +
+      '</div>' +
+      '<div class="row">' +
+        '<div>' +
+          '<label class="field-label">Início</label>' +
+          '<input type="date" class="date-input" data-field="data_inicio" value="'+data.data_inicio+'" />' +
+        '</div>' +
+        '<div>' +
+          '<label class="field-label">Previsão de término</label>' +
+          '<input type="date" class="date-input" data-field="previsao_termino" value="'+data.previsao_termino+'" />' +
+        '</div>' +
+      '</div>' +
+      '<div style="margin-bottom:20px">' +
+        '<label class="field-label">Descrição</label>' +
+        '<span class="inline-edit-span '+(data.descricao?"":"placeholder")+'" style="font-size:15px;color:#2C2824;line-height:1.55;font-style:italic;font-weight:400" data-inline-edit="descricao" data-multiline="true">' +
+          (escHtml(data.descricao) || "Descrição do projeto...") +
+        '</span>' +
+      '</div>' +
+
+      (proximaAcao ? (
+        '<div class="next-action">' +
+          '<span class="next-action-label">Próxima ação</span>' +
+          '<span class="status-badge" style="background:'+statusBg[proximaAcao.tarefa.status]+';color:'+statusColor[proximaAcao.tarefa.status]+'">' +
+            proximaAcao.tarefa.status +
+          '</span>' +
+          '<span style="font-size:16px;color:#2C2824;flex:1;font-weight:500">'+escHtml(proximaAcao.tarefa.nome)+'</span>' +
+          '<span style="font-size:13px;color:#6E685D;font-style:italic">'+proximaAcao.fase+'</span>' +
+          (proximaAcao.tarefa.status === "A fazer" ? (
+            '<button class="btn-start" data-start-task="'+proximaAcao.tarefa.id+'" data-fase-id="'+proximaAcao.faseId+'">Iniciar</button>'
+          ) : "") +
+        '</div>'
+      ) : "") +
+
+      '<div class="dash-grid">' +
+        dashCards.map(c => {
+          const hasValue = c.value > 0;
+          const isActive = statusFilter === c.filter;
+          const cls = "dash-card" + (c.alert ? " alert" : "") + (hasValue ? " has-value" : "") + " " + c.key + (isActive ? " active" : "");
+          return (
+            '<button class="'+cls+'" data-filter="'+c.filter+'">' +
+              '<div class="dash-card-value">'+c.value+'</div>' +
+              '<div class="dash-card-label">'+c.label+'</div>' +
+            '</button>'
+          );
+        }).join("") +
+      '</div>' +
+
+      '<div>' +
+        '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">' +
+          '<span style="font-family:\'Instrument Serif\',serif;font-size:13px;color:#6E685D;font-style:italic;text-transform:uppercase;letter-spacing:0.5px">Progresso geral</span>' +
+          '<span style="font-family:\'Instrument Serif\',serif;font-size:22px;color:'+(prog===100?"#3D6B53":"#2C2824")+'">'+prog+'%</span>' +
+        '</div>' +
+        progressBar(prog, 8) +
+      '</div>' +
+    '</div>'
+  );
+}
+
+function buildTabs() {
+  const tabs = [
+    { id:"tarefas", label:"Tarefas" },
+    { id:"riscos",  label:"Riscos"  },
+    { id:"anexos",  label:"Anexos"  },
+  ];
+  return '<div class="tabs">' +
+    tabs.map(t => '<button class="tab-btn '+(activeTab === t.id ? "active" : "")+'" data-tab="'+t.id+'">'+t.label+'</button>').join("") +
+    '</div>';
+}
+
+function tarefaMatchesFilter(t) {
+  if (searchQuery) {
+    const q = searchQuery.toLowerCase();
+    const nome = (t.nome || "").toLowerCase();
+    const resp = (t.responsavel || "").toLowerCase();
+    const status = (t.status || "").toLowerCase();
+    if (!nome.includes(q) && !resp.includes(q) && !status.includes(q)) return false;
+  }
+  if (statusFilter) {
+    if (statusFilter === "atrasadas") {
+      if (!isAtrasada(t)) return false;
+    } else if (t.status !== statusFilter) {
+      return false;
+    }
+  }
+  return true;
+}
+
+function buildTarefas() {
+  const filterPill = statusFilter ? (
+    '<div class="filter-pill" data-clear-filter="1">' +
+      'Filtrando: ' + statusFilter + ' ' + ICO.close +
+    '</div>'
+  ) : "";
+
+  return (
+    '<div class="search-wrap">' +
+      '<span class="search-icon">'+ICO.search+'</span>' +
+      '<input class="search-input" type="text" id="searchInput" placeholder="Buscar tarefa, responsável ou status..." value="'+escHtml(searchQuery)+'" aria-label="Buscar tarefas" />' +
+    '</div>' +
+    filterPill +
+    '<div class="tarefas-container">' +
+    '<div style="display:flex;flex-direction:column;gap:16px">' +
+    data.fases.map(fase => {
+      const tarefasFiltradas = fase.tarefas.filter(tarefaMatchesFilter);
+      const prog   = calcProgresso(fase.tarefas);
+      const isOpen = expandedFases[fase.id] !== false;
+      const hidePhase = (searchQuery || statusFilter) && tarefasFiltradas.length === 0;
+      if (hidePhase) return "";
+      return (
+        '<div class="card-sm">' +
+          '<div class="fase-header" data-fase-toggle="'+fase.id+'">' +
+            '<span class="fase-arrow" style="transform:'+(isOpen ? "rotate(90deg)" : "rotate(0)")+'">'+ICO.chevron+'</span>' +
+            '<span style="font-family:\'Instrument Serif\',serif;font-size:20px;flex:1">'+fase.nome+'</span>' +
+            '<span style="font-size:13px;color:#6E685D;font-style:italic;padding-right:8px">'+tarefasFiltradas.length+(tarefasFiltradas.length !== fase.tarefas.length ? "/"+fase.tarefas.length : "")+' tarefa'+(fase.tarefas.length !== 1 ? "s" : "")+'</span>' +
+            '<div style="width:160px;padding-right:8px;display:flex;align-items:center;gap:8px">' +
+              '<div style="flex:1">'+progressBar(prog, 5)+'</div>' +
+              '<span style="font-family:\'Instrument Serif\',serif;font-size:14px;color:#5B8A6F;width:40px;text-align:right">'+prog+'%</span>' +
+            '</div>' +
+          '</div>' +
+          (isOpen ? (
+            '<div class="tarefas-grid" data-drop-fase="'+fase.id+'">' +
+              tarefasFiltradas.map((tarefa, idx) => {
+                const realIdx = fase.tarefas.indexOf(tarefa);
+                return buildTarefaRow(fase, tarefa, realIdx);
+              }).join("") +
+              (tarefasFiltradas.length === 0 ? '<div class="empty-state">Nenhuma tarefa encontrada</div>' : "") +
+              '<div style="padding:12px 20px">' +
+                '<button class="add-btn" data-add-tarefa="'+fase.id+'">'+ICO.plus+'Adicionar tarefa</button>' +
+              '</div>' +
+            '</div>'
+          ) : "") +
+        '</div>'
+      );
+    }).join("") +
+    '</div></div>'
+  );
+}
+
+function formatDataPrevista(data_prevista, status) {
+  if (!data_prevista) return '';
+  const hoje = new Date(); hoje.setHours(0,0,0,0);
+  const d = new Date(data_prevista + "T00:00:00");
+  if (status !== "Concluída" && d < hoje) {
+    const dias = Math.round((hoje - d) / 86400000);
+    return '<span style="background:#E8D5D0;color:#8B3A2C;font-size:12px;font-style:italic;padding:3px 10px;white-space:nowrap;border:1px solid #D1CBC0;font-weight:500">'+dias+'d atraso</span>';
+  }
+  return '';
+}
+
+function buildTarefaRow(fase, tarefa, idx) {
+  const tProg  = calcProgresso([tarefa]);
+  const isExpT = expandedTarefas[tarefa.id];
+  const isActionsOpen = openActionsMenu === tarefa.id;
+
+  const fasesOpts = data.fases.filter(f => f.id !== fase.id).map(f =>
+    '<div class="actions-item" data-move-to="'+f.id+'" data-tarefa-id="'+tarefa.id+'" data-from-fase="'+fase.id+'">Mover para '+f.nome+'</div>'
+  ).join("");
+
+  return (
+    '<div draggable="true" data-drag-fase="'+fase.id+'" data-drag-idx="'+idx+'" data-tarefa-id="'+tarefa.id+'">' +
+      '<div class="tarefa-row">' +
+        '<div class="tarefa-col-handle">' +
+          '<span class="drag-handle" draggable="true">'+ICO.drag+'</span>' +
+          '<span style="cursor:pointer;color:#D1CBC0;display:inline-flex;transition:transform 0.2s;transform:'+(isExpT ? "rotate(90deg)" : "rotate(0)")+'" data-expand-tarefa="'+tarefa.id+'">'+ICO.chevron+'</span>' +
+        '</div>' +
+        '<div class="tarefa-col-nome">' +
+          '<span class="inline-edit-span" style="font-size:15px;display:block;font-weight:500" data-inline-edit-tarefa="'+tarefa.id+'" data-fase-id="'+fase.id+'" data-field-tarefa="nome">'+escHtml(tarefa.nome || "Nova tarefa")+'</span>' +
+        '</div>' +
+        '<div class="tarefa-col-resp">' +
+          '<span style="color:#D1CBC0;flex-shrink:0" aria-hidden="true">'+ICO.user+'</span>' +
+          '<span class="inline-edit-span" style="font-size:13px;font-style:italic;color:#2C2824;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" data-inline-edit-tarefa="'+tarefa.id+'" data-fase-id="'+fase.id+'" data-field-tarefa="responsavel">'+
+            (escHtml(tarefa.responsavel) || '<span style="color:#D1CBC0">—</span>') +
+          '</span>' +
+        '</div>' +
+        '<div class="tarefa-col-data">' +
+          '<div class="date-wrapper">' +
+            '<div class="date-pills">' +
+              '<button class="date-pill" data-preset="hoje" data-tarefa-id="'+tarefa.id+'" data-fase-id="'+fase.id+'">Hoje</button>' +
+              '<button class="date-pill" data-preset="amanha" data-tarefa-id="'+tarefa.id+'" data-fase-id="'+fase.id+'">Amanhã</button>' +
+              '<button class="date-pill" data-preset="sexta" data-tarefa-id="'+tarefa.id+'" data-fase-id="'+fase.id+'">Próx. sexta</button>' +
+            '</div>' +
+            '<input type="date" class="date-input" style="font-size:12px;padding:5px 8px;width:130px" data-field-tarefa-date="'+tarefa.id+'" data-fase-id="'+fase.id+'" value="'+(tarefa.data_prevista || "")+'" />' +
+          '</div>' +
+          formatDataPrevista(tarefa.data_prevista, tarefa.status) +
+        '</div>' +
+        '<div class="tarefa-col-prog">' +
+          '<div style="flex:1;min-width:0">'+progressBar(tProg, 4)+'</div>' +
+          '<span style="font-family:\'Instrument Serif\',serif;font-size:13px;color:'+(tProg === 100 ? "#3D6B53" : "#5B8A6F")+';width:36px;text-align:right">'+tProg+'%</span>' +
+        '</div>' +
+        '<div class="tarefa-col-status">' +
+          '<span class="status-badge select-edit-span" style="background:'+statusBg[tarefa.status]+';color:'+statusColor[tarefa.status]+';border-bottom:none;width:100%;justify-content:center;font-size:13px;font-weight:500" data-select-tarefa="'+tarefa.id+'" data-fase-id="'+fase.id+'" data-options="'+STATUS_OPTIONS.join("|")+'">'+tarefa.status+'</span>' +
+        '</div>' +
+        '<div class="tarefa-col-menu">' +
+          '<div class="actions-menu">' +
+            '<button class="actions-btn" data-actions-toggle="'+tarefa.id+'" aria-label="Menu de ações">'+ICO.more+'</button>' +
+            '<div class="actions-dropdown '+(isActionsOpen?"open":"")+'">' +
+              (fasesOpts || '') +
+              (fasesOpts ? '<div class="actions-sep"></div>' : '') +
+              '<div class="actions-item" data-add-sub-menu="'+tarefa.id+'" data-fase-id="'+fase.id+'">+ Subtarefa</div>' +
+              '<div class="actions-sep"></div>' +
+              '<div class="actions-item danger" data-del-tarefa="'+tarefa.id+'" data-fase-id="'+fase.id+'">Excluir tarefa</div>' +
+            '</div>' +
+          '</div>' +
+        '</div>' +
+      '</div>' +
+      (isExpT ? (
+        '<div style="padding-left:60px;padding-bottom:16px;padding-right:24px;background:#F8F6F0">' +
+          (tarefa.subtarefas || []).map(sub => (
+            '<div class="subtarefa-row">' +
+              '<input type="checkbox" '+(sub.concluida ? "checked" : "")+' style="accent-color:#5B8A6F;width:18px;height:18px;cursor:pointer;flex-shrink:0" data-check-sub="'+sub.id+'" data-fase-id="'+fase.id+'" data-tarefa-id="'+tarefa.id+'" aria-label="Marcar subtarefa como concluída" />' +
+              '<span class="inline-edit-span" style="font-size:14px;color:'+(sub.concluida ? "#D1CBC0" : "#2C2824")+';text-decoration:'+(sub.concluida ? "line-through" : "none")+';flex:1;font-style:'+(sub.concluida ? "italic" : "normal")+'" data-inline-edit-sub="'+sub.id+'" data-fase-id="'+fase.id+'" data-tarefa-id="'+tarefa.id+'">'+escHtml(sub.nome)+'</span>' +
+              '<button class="icon-btn" data-del-sub="'+sub.id+'" data-fase-id="'+fase.id+'" data-tarefa-id="'+tarefa.id+'" aria-label="Remover subtarefa">'+ICO.close+'</button>' +
+            '</div>'
+          )).join("") +
+          '<button class="add-btn" style="margin-top:8px;font-size:13px" data-add-sub="'+tarefa.id+'" data-fase-id="'+fase.id+'">'+ICO.plus+'Adicionar subtarefa</button>' +
+        '</div>'
+      ) : "") +
+    '</div>'
+  );
+}
+
+function severityClass(prob, imp) {
+  const probMap = { "Baixa":1, "Média":2, "Alta":3 };
+  const impMap = { "Baixo":1, "Médio":2, "Alto":3 };
+  const score = (probMap[prob] || 1) * (impMap[imp] || 1);
+  if (score <= 2) return "sev-low";
+  if (score <= 4) return "sev-med";
+  if (score <= 6) return "sev-high";
+  return "sev-crit";
+}
+
+function buildRiscos() {
+  const matrix = {};
+  PROB_OPTIONS.forEach(p => IMPACTO_OPTIONS.forEach(i => { matrix[p+"|"+i] = []; }));
+  data.riscos.forEach(r => {
+    const key = r.probabilidade + "|" + r.impacto;
+    if (matrix[key]) matrix[key].push(r);
+  });
+
+  let matrixHtml = '<div class="risk-matrix">' +
+    '<div class="matrix-label"></div>' +
+    IMPACTO_OPTIONS.map(imp => '<div class="matrix-label">Impacto '+imp+'</div>').join("") +
+    PROB_OPTIONS.slice().reverse().map(prob => {
+      return '<div class="matrix-label">Probabilidade '+prob+'</div>' +
+        IMPACTO_OPTIONS.map(imp => {
+          const risks = matrix[prob+"|"+imp] || [];
+          return '<div class="matrix-cell '+severityClass(prob, imp)+'">' +
+            risks.map(r => '<div class="matrix-risk" title="'+escHtml(r.descricao)+'">'+escHtml(r.descricao.length > 50 ? r.descricao.slice(0, 50)+"…" : r.descricao)+'</div>').join("") +
+          '</div>';
+        }).join("");
+    }).join("") +
+  '</div>';
+
+  let listaHtml = '<div class="card-sm">' +
+    '<div style="padding:16px 24px;font-family:\'Instrument Serif\',serif;font-style:italic;font-size:15px;color:#6E685D;border-bottom:2px solid #EBE5D9">Lista de riscos</div>' +
+    (data.riscos.length === 0 ? '<div class="empty-state">Nenhum risco mapeado ainda</div>' : "") +
+    data.riscos.map((r, i) => {
+      const sev = severityClass(r.probabilidade, r.impacto);
+      const sevColor = { "sev-low":"#5B8A6F", "sev-med":"#C9A87C", "sev-high":"#D9984A", "sev-crit":"#8B3A2C" }[sev];
+      return '<div style="display:flex;align-items:center;gap:18px;padding:14px 24px;border-bottom:'+(i < data.riscos.length-1 ? "1px dashed #EBE5D9" : "none")+'">' +
+        '<span style="width:4px;height:32px;background:'+sevColor+';flex-shrink:0"></span>' +
+        '<div style="flex:2">' +
+          '<span class="inline-edit-span" style="font-size:15px;font-weight:500" data-inline-edit-risco="'+r.id+'" data-field-risco="descricao">'+escHtml(r.descricao)+'</span>' +
+        '</div>' +
+        '<div style="display:flex;align-items:center;gap:10px">' +
+          '<span style="font-family:\'Instrument Serif\',serif;font-style:italic;font-size:12px;color:#6E685D">prob.</span>' +
+          '<span class="select-edit-span" style="font-size:14px;color:'+sevColor+';font-weight:500" data-select-risco="'+r.id+'" data-field-risco="probabilidade" data-options="'+PROB_OPTIONS.join("|")+'">'+r.probabilidade+'</span>' +
+        '</div>' +
+        '<div style="display:flex;align-items:center;gap:10px">' +
+          '<span style="font-family:\'Instrument Serif\',serif;font-style:italic;font-size:12px;color:#6E685D">impacto</span>' +
+          '<span class="select-edit-span" style="font-size:14px;color:'+sevColor+';font-weight:500" data-select-risco="'+r.id+'" data-field-risco="impacto" data-options="'+IMPACTO_OPTIONS.join("|")+'">'+r.impacto+'</span>' +
+        '</div>' +
+        '<button class="icon-btn" data-del-risco="'+r.id+'" aria-label="Remover risco">'+ICO.close+'</button>' +
+      '</div>';
+    }).join("") +
+    '<div style="padding:12px 24px">' +
+      '<button class="add-btn" data-add-risco="1">'+ICO.plus+'Adicionar risco</button>' +
+    '</div>' +
+  '</div>';
+
+  return matrixHtml + listaHtml;
+}
+
+function buildAnexos() {
+  return '<div class="card-sm">' +
+    (data.anexos.length === 0 ? '<div class="empty-state">Nenhum anexo referenciado</div>' : "") +
+    data.anexos.map((a, i) => (
+      '<div style="display:flex;align-items:center;gap:16px;padding:14px 24px;border-bottom:'+(i < data.anexos.length-1 ? "1px dashed #EBE5D9" : "none")+'">' +
+        '<span style="color:#D1CBC0" aria-hidden="true">'+ICO.attach+'</span>' +
+        '<div style="flex:1">' +
+          '<span class="inline-edit-span" style="font-size:15px;font-weight:500" data-inline-edit-anexo="'+a.id+'" data-field-anexo="nome">'+escHtml(a.nome)+'</span>' +
+        '</div>' +
+        '<div style="flex:2">' +
+          '<span class="inline-edit-span" style="font-size:14px;font-style:italic;color:#6E685D" data-inline-edit-anexo="'+a.id+'" data-field-anexo="descricao">'+
+            (escHtml(a.descricao) || '<span style="color:#D1CBC0">Descrição do arquivo...</span>') +
+          '</span>' +
+        '</div>' +
+        '<button class="icon-btn" data-del-anexo="'+a.id+'" aria-label="Remover anexo">'+ICO.close+'</button>' +
+      '</div>'
+    )).join("") +
+    '<div style="padding:12px 24px">' +
+      '<button class="add-btn" data-add-anexo="1">'+ICO.plus+'Adicionar anexo</button>' +
+    '</div>' +
+  '</div>';
+}
+
+function activateInlineEdit(span, currentValue, multiline, onCommit) {
+  const style = span.getAttribute("style") || "";
+  if (multiline) {
+    const ta = document.createElement("textarea");
+    ta.className = "inline-edit-textarea";
+    ta.setAttribute("style", style);
+    ta.value = currentValue;
+    span.replaceWith(ta);
+    ta.focus();
+    const commit = () => { onCommit(ta.value); render(); showSaved(); };
+    ta.addEventListener("blur", commit);
+    ta.addEventListener("keydown", e => { if (e.key === "Enter" && !e.shiftKey) commit(); });
+  } else {
+    const inp = document.createElement("input");
+    inp.className = "inline-edit-input";
+    inp.setAttribute("style", style);
+    inp.value = currentValue;
+    span.replaceWith(inp);
+    inp.focus();
+    inp.select();
+    const commit = () => { onCommit(inp.value); render(); showSaved(); };
+    inp.addEventListener("blur", commit);
+    inp.addEventListener("keydown", e => { if (e.key === "Enter") commit(); });
+  }
+}
+
+function activateSelectEdit(span, currentValue, options, onCommit) {
+  const style = span.getAttribute("style") || "";
+  const sel = document.createElement("select");
+  sel.className = "select-edit-select";
+  sel.setAttribute("style", style);
+  options.forEach(o => {
+    const opt = document.createElement("option");
+    opt.value = o; opt.textContent = o;
+    if (o === currentValue) opt.selected = true;
+    sel.appendChild(opt);
+  });
+  span.replaceWith(sel);
+  sel.focus();
+  const commit = () => { onCommit(sel.value); render(); showSaved(); };
+  sel.addEventListener("change", commit);
+  sel.addEventListener("blur", () => { onCommit(sel.value); render(); });
+}
+
+function datePreset(preset) {
+  const d = new Date();
+  if (preset === "amanha") d.setDate(d.getDate() + 1);
+  if (preset === "sexta") {
+    const day = d.getDay();
+    const diff = (5 - day + 7) % 7 || 7;
+    d.setDate(d.getDate() + diff);
+  }
+  return d.toISOString().slice(0, 10);
+}
+
+function bindEvents() {
+  const app = document.getElementById("app");
+
+  const searchInp = document.getElementById("searchInput");
+  if (searchInp) {
+    searchInp.addEventListener("input", e => {
+      searchQuery = e.target.value;
+      const pos = e.target.selectionStart;
+      render();
+      const newInp = document.getElementById("searchInput");
+      if (newInp) { newInp.focus(); newInp.setSelectionRange(pos, pos); }
+    });
+  }
+
+  app.querySelectorAll("[data-clear-filter]").forEach(el => {
+    el.addEventListener("click", () => { statusFilter = null; render(); });
+  });
+
+  app.querySelectorAll("[data-filter]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const f = btn.dataset.filter;
+      statusFilter = statusFilter === f ? null : f;
+      activeTab = "tarefas";
+      render();
+    });
+  });
+
+  app.querySelectorAll("[data-preset]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const tid = btn.dataset.tarefaId;
+      const fid = btn.dataset.faseId;
+      const fase = data.fases.find(f => f.id === fid);
+      const tarefa = fase.tarefas.find(t => t.id === tid);
+      snapshot("alterou data");
+      tarefa.data_prevista = datePreset(btn.dataset.preset);
+      render(); showSaved();
+    });
+  });
+
+  app.querySelectorAll("[data-field-tarefa-date]").forEach(inp => {
+    inp.addEventListener("change", () => {
+      const tid = inp.dataset.fieldTarefaDate;
+      const fid = inp.dataset.faseId;
+      const fase = data.fases.find(f => f.id === fid);
+      const tarefa = fase.tarefas.find(t => t.id === tid);
+      snapshot("alterou data");
+      tarefa.data_prevista = inp.value;
+      render(); showSaved();
+    });
+  });
+
+  app.querySelectorAll("[data-tab]").forEach(btn => {
+    btn.addEventListener("click", () => { activeTab = btn.dataset.tab; render(); });
+  });
+
+  app.querySelectorAll("[data-field]").forEach(inp => {
+    inp.addEventListener("change", () => {
+      snapshot("alterou campo");
+      data[inp.dataset.field] = inp.value;
+      render(); showSaved();
+    });
+  });
+
+  app.querySelectorAll("[data-fase-toggle]").forEach(el => {
+    el.addEventListener("click", () => {
+      const id = el.dataset.faseToggle;
+      expandedFases[id] = !expandedFases[id];
+      render();
+    });
+  });
+
+  app.querySelectorAll("[data-inline-edit]").forEach(span => {
+    span.addEventListener("click", () => {
+      const field = span.dataset.inlineEdit;
+      const multiline = span.dataset.multiline === "true";
+      snapshot("editou "+field);
+      activateInlineEdit(span, data[field] || "", multiline, val => { data[field] = val; });
+    });
+  });
+
+  app.querySelectorAll("[data-select-edit]").forEach(span => {
+    span.addEventListener("click", () => {
+      const field = span.dataset.selectEdit;
+      const options = span.dataset.options.split("|");
+      snapshot("alterou "+field);
+      activateSelectEdit(span, data[field], options, val => { data[field] = val; });
+    });
+  });
+
+  app.querySelectorAll("[data-expand-tarefa]").forEach(span => {
+    span.addEventListener("click", e => {
+      e.stopPropagation();
+      expandedTarefas[span.dataset.expandTarefa] = !expandedTarefas[span.dataset.expandTarefa];
+      render();
+    });
+  });
+
+  app.querySelectorAll("[data-inline-edit-tarefa]").forEach(span => {
+    span.addEventListener("click", () => {
+      const tid = span.dataset.inlineEditTarefa;
+      const fid = span.dataset.faseId;
+      const field = span.dataset.fieldTarefa;
+      const fase = data.fases.find(f => f.id === fid);
+      const tarefa = fase.tarefas.find(t => t.id === tid);
+      snapshot("editou tarefa");
+      activateInlineEdit(span, tarefa[field] || "", false, val => { tarefa[field] = val; });
+    });
+  });
+
+  app.querySelectorAll("[data-select-tarefa]").forEach(span => {
+    span.addEventListener("click", () => {
+      const tid = span.dataset.selectTarefa;
+      const fid = span.dataset.faseId;
+      const options = span.dataset.options.split("|");
+      const fase = data.fases.find(f => f.id === fid);
+      const tarefa = fase.tarefas.find(t => t.id === tid);
+      snapshot("alterou status");
+      activateSelectEdit(span, tarefa.status, options, val => { tarefa.status = val; });
+    });
+  });
+
+  app.querySelectorAll("[data-start-task]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const tid = btn.dataset.startTask;
+      const fid = btn.dataset.faseId;
+      const fase = data.fases.find(f => f.id === fid);
+      const tarefa = fase.tarefas.find(t => t.id === tid);
+      snapshot("iniciou tarefa");
+      tarefa.status = "Em andamento";
+      render(); showSaved();
+    });
+  });
+
+  app.querySelectorAll("[data-actions-toggle]").forEach(btn => {
+    btn.addEventListener("click", e => {
+      e.stopPropagation();
+      const tid = btn.dataset.actionsToggle;
+      openActionsMenu = openActionsMenu === tid ? null : tid;
+      render();
+    });
+  });
+
+  app.querySelectorAll("[data-move-to]").forEach(item => {
+    item.addEventListener("click", () => {
+      const tid = item.dataset.tarefaId;
+      const from = item.dataset.fromFase;
+      const to = item.dataset.moveTo;
+      const fromFase = data.fases.find(f => f.id === from);
+      const toFase = data.fases.find(f => f.id === to);
+      const idx = fromFase.tarefas.findIndex(t => t.id === tid);
+      if (idx === -1) return;
+      snapshot("moveu tarefa");
+      const [tarefa] = fromFase.tarefas.splice(idx, 1);
+      toFase.tarefas.push(tarefa);
+      openActionsMenu = null;
+      render(); showSaved();
+    });
+  });
+
+  app.querySelectorAll("[data-add-sub-menu]").forEach(item => {
+    item.addEventListener("click", () => {
+      const tid = item.dataset.addSubMenu;
+      const fid = item.dataset.faseId;
+      const fase = data.fases.find(f => f.id === fid);
+      const tarefa = fase.tarefas.find(t => t.id === tid);
+      snapshot("adicionou subtarefa");
+      tarefa.subtarefas.push({ id: uid(), nome: "Nova subtarefa", concluida: false });
+      expandedTarefas[tid] = true;
+      openActionsMenu = null;
+      render(); showSaved();
+    });
+  });
+
+  app.querySelectorAll("[data-del-tarefa]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const tid = btn.dataset.delTarefa;
+      const fid = btn.dataset.faseId;
+      const fase = data.fases.find(f => f.id === fid);
+      snapshot("excluiu tarefa");
+      fase.tarefas = fase.tarefas.filter(t => t.id !== tid);
+      openActionsMenu = null;
+      render();
+      showToast("Tarefa removida", true);
+    });
+  });
+
+  app.querySelectorAll("[data-add-tarefa]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const fid = btn.dataset.addTarefa;
+      const fase = data.fases.find(f => f.id === fid);
+      snapshot("adicionou tarefa");
+      fase.tarefas.push({ id: uid(), nome: "Nova tarefa", status: "A fazer", subtarefas: [], responsavel: "", data_prevista: "" });
+      render(); showSaved();
+    });
+  });
+
+  app.querySelectorAll("[data-check-sub]").forEach(inp => {
+    inp.addEventListener("change", () => {
+      const sid = inp.dataset.checkSub;
+      const fid = inp.dataset.faseId;
+      const tid = inp.dataset.tarefaId;
+      const fase = data.fases.find(f => f.id === fid);
+      const tarefa = fase.tarefas.find(t => t.id === tid);
+      const sub = tarefa.subtarefas.find(s => s.id === sid);
+      snapshot("marcou subtarefa");
+      sub.concluida = inp.checked;
+      render(); showSaved();
+    });
+  });
+
+  app.querySelectorAll("[data-inline-edit-sub]").forEach(span => {
+    span.addEventListener("click", () => {
+      const sid = span.dataset.inlineEditSub;
+      const fid = span.dataset.faseId;
+      const tid = span.dataset.tarefaId;
+      const fase = data.fases.find(f => f.id === fid);
+      const tarefa = fase.tarefas.find(t => t.id === tid);
+      const sub = tarefa.subtarefas.find(s => s.id === sid);
+      snapshot("editou subtarefa");
+      activateInlineEdit(span, sub.nome, false, val => { sub.nome = val; });
+    });
+  });
+
+  app.querySelectorAll("[data-del-sub]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const sid = btn.dataset.delSub;
+      const fid = btn.dataset.faseId;
+      const tid = btn.dataset.tarefaId;
+      const fase = data.fases.find(f => f.id === fid);
+      const tarefa = fase.tarefas.find(t => t.id === tid);
+      snapshot("removeu subtarefa");
+      tarefa.subtarefas = tarefa.subtarefas.filter(s => s.id !== sid);
+      render();
+      showToast("Subtarefa removida", true);
+    });
+  });
+
+  app.querySelectorAll("[data-add-sub]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const tid = btn.dataset.addSub;
+      const fid = btn.dataset.faseId;
+      const fase = data.fases.find(f => f.id === fid);
+      const tarefa = fase.tarefas.find(t => t.id === tid);
+      snapshot("adicionou subtarefa");
+      tarefa.subtarefas.push({ id: uid(), nome: "Nova subtarefa", concluida: false });
+      expandedTarefas[tid] = true;
+      render(); showSaved();
+    });
+  });
+
+  app.querySelectorAll("[data-inline-edit-risco]").forEach(span => {
+    span.addEventListener("click", () => {
+      const rid = span.dataset.inlineEditRisco;
+      const field = span.dataset.fieldRisco;
+      const risco = data.riscos.find(r => r.id === rid);
+      snapshot("editou risco");
+      activateInlineEdit(span, risco[field], false, val => { risco[field] = val; });
+    });
+  });
+
+  app.querySelectorAll("[data-select-risco]").forEach(span => {
+    span.addEventListener("click", () => {
+      const rid = span.dataset.selectRisco;
+      const field = span.dataset.fieldRisco;
+      const options = span.dataset.options.split("|");
+      const risco = data.riscos.find(r => r.id === rid);
+      snapshot("alterou risco");
+      activateSelectEdit(span, risco[field], options, val => { risco[field] = val; });
+    });
+  });
+
+  app.querySelectorAll("[data-del-risco]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      snapshot("removeu risco");
+      data.riscos = data.riscos.filter(r => r.id !== btn.dataset.delRisco);
+      render();
+      showToast("Risco removido", true);
+    });
+  });
+
+  app.querySelectorAll("[data-add-risco]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      snapshot("adicionou risco");
+      data.riscos.push({ id: uid(), descricao: "Novo risco", probabilidade: "Baixa", impacto: "Baixo" });
+      render(); showSaved();
+    });
+  });
+
+  app.querySelectorAll("[data-inline-edit-anexo]").forEach(span => {
+    span.addEventListener("click", () => {
+      const aid = span.dataset.inlineEditAnexo;
+      const field = span.dataset.fieldAnexo;
+      const anexo = data.anexos.find(a => a.id === aid);
+      snapshot("editou anexo");
+      activateInlineEdit(span, anexo[field] || "", false, val => { anexo[field] = val; });
+    });
+  });
+
+  app.querySelectorAll("[data-del-anexo]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      snapshot("removeu anexo");
+      data.anexos = data.anexos.filter(a => a.id !== btn.dataset.delAnexo);
+      render();
+      showToast("Anexo removido", true);
+    });
+  });
+
+  app.querySelectorAll("[data-add-anexo]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      snapshot("adicionou anexo");
+      data.anexos.push({ id: uid(), nome: "arquivo.ext", descricao: "" });
+      render(); showSaved();
+    });
+  });
+
+  app.querySelectorAll("[data-drag-fase]").forEach(row => {
+    row.addEventListener("dragstart", e => {
+      dragItem = { faseId: row.dataset.dragFase, idx: parseInt(row.dataset.dragIdx), tarefaId: row.dataset.tarefaId };
+      row.classList.add("dragging");
+      e.dataTransfer.effectAllowed = "move";
+    });
+    row.addEventListener("dragend", () => row.classList.remove("dragging"));
+    row.addEventListener("dragover", e => { e.preventDefault(); row.classList.add("drag-over"); });
+    row.addEventListener("dragleave", () => row.classList.remove("drag-over"));
+    row.addEventListener("drop", e => {
+      e.preventDefault();
+      row.classList.remove("drag-over");
+      if (!dragItem) return;
+      const toFaseId = row.dataset.dragFase;
+      const toIdx = parseInt(row.dataset.dragIdx);
+      if (dragItem.faseId === toFaseId && dragItem.idx === toIdx) { dragItem = null; return; }
+      snapshot("moveu tarefa");
+      const fromFase = data.fases.find(f => f.id === dragItem.faseId);
+      const toFase = data.fases.find(f => f.id === toFaseId);
+      const [moved] = fromFase.tarefas.splice(dragItem.idx, 1);
+      if (fromFase.id === toFase.id && dragItem.idx < toIdx) {
+        toFase.tarefas.splice(toIdx, 0, moved);
+      } else {
+        toFase.tarefas.splice(toIdx, 0, moved);
+      }
+      dragItem = null;
+      render(); showSaved();
+    });
+  });
+
+  app.querySelectorAll("[data-drop-fase]").forEach(container => {
+    container.addEventListener("dragover", e => { e.preventDefault(); });
+    container.addEventListener("drop", e => {
+      if (!dragItem) return;
+      if (e.target !== container && !container.contains(e.target)) return;
+      const toFaseId = container.dataset.dropFase;
+      if (dragItem.faseId === toFaseId) return;
+      snapshot("moveu tarefa");
+      const fromFase = data.fases.find(f => f.id === dragItem.faseId);
+      const toFase = data.fases.find(f => f.id === toFaseId);
+      const [moved] = fromFase.tarefas.splice(dragItem.idx, 1);
+      toFase.tarefas.push(moved);
+      dragItem = null;
+      render(); showSaved();
+    });
+  });
+
+  document.addEventListener("click", closeMenusOutside, { once: true });
+}
+
+function closeMenusOutside(e) {
+  if (!e.target.closest(".actions-menu") && openActionsMenu !== null) {
+    openActionsMenu = null;
+    render();
+  }
+}
+
+function limparProjeto() {
+  if (!confirm("Tem certeza que deseja limpar o projeto? Todos os dados serão apagados.")) return;
+  snapshot("limpou projeto");
+  data = makeInitialData();
+  try { localStorage.removeItem("nextask_data"); } catch(e) {}
+  render();
+  showToast("Projeto limpo", true);
+}
+
+function exportCSV() {
+  const rows = [["tipo","campo","valor"]];
+  rows.push(["projeto","nome_projeto",data.nome_projeto]);
+  rows.push(["projeto","data_inicio",data.data_inicio]);
+  rows.push(["projeto","previsao_termino",data.previsao_termino]);
+  rows.push(["projeto","descricao",data.descricao]);
+  rows.push(["projeto","fase_atual",data.fase_atual]);
+  data.fases.forEach(fase => {
+    fase.tarefas.forEach(t => {
+      rows.push(["tarefa", fase.id, t.id+"|"+t.nome+"|"+t.status+"|"+(t.responsavel||"")+"|"+(t.data_prevista||"")]);
+      (t.subtarefas||[]).forEach(s => {
+        rows.push(["subtarefa", t.id, s.id+"|"+s.nome+"|"+(s.concluida?"1":"0")]);
+      });
+    });
+  });
+  data.riscos.forEach(r => rows.push(["risco", r.id, r.descricao+"|"+r.probabilidade+"|"+r.impacto]));
+  data.anexos.forEach(a => rows.push(["anexo", a.id, a.nome+"|"+a.descricao]));
+  const csv = rows.map(r => r.map(c => '"'+String(c).replace(/"/g,'""')+'"').join(",")).join("\n");
+  downloadFile(csv, (data.nome_projeto||"projeto")+"_nexTask.csv", "text/csv");
+}
+
+function exportMD() {
+  const prog = calcProgressoGeral();
+  let md = "# " + (data.nome_projeto || "Projeto") + "\n\n";
+  if (data.descricao) md += data.descricao + "\n\n";
+  md += "**Fase atual:** " + data.fase_atual + " · **Progresso:** " + prog + "%\n\n";
+  if (data.data_inicio || data.previsao_termino) {
+    md += "**Período:** " + (data.data_inicio || "—") + " a " + (data.previsao_termino || "—") + "\n\n";
+  }
+  md += "---\n\n";
+  data.fases.forEach(fase => {
+    if (fase.tarefas.length === 0) return;
+    md += "## " + fase.nome + "\n\n";
+    fase.tarefas.forEach(t => {
+      const box = t.status === "Concluída" ? "[x]" : "[ ]";
+      const meta = [];
+      if (t.responsavel) meta.push("👤 " + t.responsavel);
+      if (t.data_prevista) meta.push("📅 " + t.data_prevista);
+      meta.push(t.status);
+      md += "- " + box + " **" + t.nome + "** _(" + meta.join(" · ") + ")_\n";
+      (t.subtarefas || []).forEach(s => {
+        const sbox = s.concluida ? "[x]" : "[ ]";
+        md += "  - " + sbox + " " + s.nome + "\n";
+      });
+    });
+    md += "\n";
+  });
+  if (data.riscos.length > 0) {
+    md += "## Riscos\n\n";
+    data.riscos.forEach(r => {
+      md += "- " + r.descricao + " _(Prob: " + r.probabilidade + " · Impacto: " + r.impacto + ")_\n";
+    });
+    md += "\n";
+  }
+  if (data.anexos.length > 0) {
+    md += "## Anexos\n\n";
+    data.anexos.forEach(a => {
+      md += "- **" + a.nome + "**" + (a.descricao ? " — " + a.descricao : "") + "\n";
+    });
+    md += "\n";
+  }
+  md += "---\n*Exportado pelo NexTask em " + new Date().toLocaleDateString("pt-BR") + "*\n";
+  downloadFile(md, (data.nome_projeto||"projeto")+"_resumo.md", "text/markdown");
+}
+
+function downloadFile(content, filename, mime) {
+  const blob = new Blob([content], { type: mime });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = filename; a.click();
+  URL.revokeObjectURL(url);
+}
+
+document.getElementById("fileInput").addEventListener("change", function(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const isXLSX = file.name.endsWith(".xlsx") || file.name.endsWith(".xls");
+  snapshot("importou arquivo");
+
+  if (isXLSX) {
+    const reader = new FileReader();
+    reader.onload = ev => {
+      try {
+        const wb = XLSX.read(ev.target.result, { type: "array" });
+        const newData = makeInitialData();
+        const CAMPOS_PROJETO = ["nome_projeto","data_inicio","previsao_termino","descricao","fase_atual"];
+        const FASES_VALIDAS = ["iniciacao","planejamento","execucao","encerramento"];
+        const PROB_VALIDAS = ["Baixa","Média","Alta"];
+        const IMP_VALIDOS = ["Baixo","Médio","Alto"];
+
+        if (wb.SheetNames.includes("Projeto")) {
+          XLSX.utils.sheet_to_json(wb.Sheets["Projeto"], { header:1 }).forEach(row => {
+            const campo = String(row[0]||"").trim();
+            const valor = String(row[1]||"").trim();
+            if (CAMPOS_PROJETO.includes(campo)) newData[campo] = valor;
+          });
+        }
+
+        if (wb.SheetNames.includes("Tarefas")) {
+          const rows = XLSX.utils.sheet_to_json(wb.Sheets["Tarefas"], { header:1 });
+          let hi = rows.findIndex(r => String(r[0]||"").trim() === "fase");
+          if (hi === -1) hi = 2;
+          const tarefaMap = {};
+          rows.slice(hi+1).forEach(row => {
+            const fase = String(row[0]||"").trim();
+            const tid = String(row[1]||"").trim();
+            const sid = String(row[2]||"").trim();
+            const nome = String(row[3]||"").trim();
+            const status = String(row[4]||"").trim();
+            const responsavel = String(row[5]||"").trim();
+            const dataPrevista = row[6] ? String(row[6]).trim() : "";
+            const subNome = String(row[7]||"").trim();
+            const subConc = String(row[8]||"").trim();
+
+            if (!FASES_VALIDAS.includes(fase)) return;
+
+            if (!sid && nome) {
+              const faseObj = newData.fases.find(f => f.id === fase);
+              const t = {
+                id: tid || uid(),
+                nome,
+                status: STATUS_OPTIONS.includes(status) ? status : "A fazer",
+                subtarefas: [],
+                responsavel,
+                data_prevista: dataPrevista
+              };
+              faseObj.tarefas.push(t);
+              tarefaMap[tid] = t;
+            } else if (sid && subNome) {
+              const tarefa = tarefaMap[tid] || newData.fases.flatMap(f => f.tarefas).find(t => t.id === tid);
+              if (tarefa) {
+                tarefa.subtarefas.push({ id: sid || uid(), nome: subNome, concluida: subConc === "1" || subConc.toLowerCase() === "sim" });
+              }
+            }
+          });
+        }
+
+        if (wb.SheetNames.includes("Riscos")) {
+          const rows = XLSX.utils.sheet_to_json(wb.Sheets["Riscos"], { header:1 });
+          let hi = rows.findIndex(r => String(r[0]||"").trim() === "risco_id");
+          if (hi === -1) hi = 1;
+          rows.slice(hi+1).forEach(row => {
+            const id = String(row[0]||"").trim();
+            const desc = String(row[1]||"").trim();
+            const prob = String(row[2]||"").trim();
+            const imp = String(row[3]||"").trim();
+            if (!desc || !PROB_VALIDAS.includes(prob)) return;
+            newData.riscos.push({ id: id || uid(), descricao: desc, probabilidade: prob, impacto: IMP_VALIDOS.includes(imp) ? imp : "Baixo" });
+          });
+        }
+
+        if (wb.SheetNames.includes("Anexos")) {
+          const rows = XLSX.utils.sheet_to_json(wb.Sheets["Anexos"], { header:1 });
+          let hi = rows.findIndex(r => String(r[0]||"").trim() === "anexo_id");
+          if (hi === -1) hi = 1;
+          rows.slice(hi+1).forEach(row => {
+            const id = String(row[0]||"").trim();
+            const nome = String(row[1]||"").trim();
+            const desc = String(row[2]||"").trim();
+            if (!nome || nome === "nome_arquivo") return;
+            newData.anexos.push({ id: id || uid(), nome, descricao: desc });
+          });
+        }
+
+        data = newData; render(); showSaved();
+      } catch(err) {
+        alert("Erro ao ler o arquivo .xlsx. Verifique o formato.");
+      }
+    };
+    reader.readAsArrayBuffer(file);
+  } else {
+    const reader = new FileReader();
+    reader.onload = ev => {
+      const lines = ev.target.result.split("\n").slice(1);
+      const newData = makeInitialData();
+      const tarefaMap = {};
+      lines.forEach(line => {
+        if (!line.trim()) return;
+        const cols = line.split(/,(?=(?:[^"]*"[^"]*")*[^"]*$)/).map(c => c.replace(/^"|"$/g,"").replace(/""/g,'"'));
+        if (cols.length < 3) return;
+        const [tipo, campo, valor] = cols;
+        if (tipo === "projeto") {
+          newData[campo] = valor;
+        } else if (tipo === "tarefa") {
+          const faseObj = newData.fases.find(f => f.id === campo);
+          if (faseObj) {
+            const [id, nome, status, responsavel, data_prevista] = valor.split("|");
+            const t = { id, nome, status: status || "A fazer", subtarefas: [], responsavel: responsavel || "", data_prevista: data_prevista || "" };
+            faseObj.tarefas.push(t); tarefaMap[id] = t;
+          }
+        } else if (tipo === "subtarefa") {
+          const tarefa = tarefaMap[campo];
+          if (tarefa) {
+            const [id, nome, concluida] = valor.split("|");
+            tarefa.subtarefas.push({ id, nome, concluida: concluida === "1" });
+          }
+        } else if (tipo === "risco") {
+          const [descricao, probabilidade, impacto] = valor.split("|");
+          newData.riscos.push({ id: campo, descricao, probabilidade: probabilidade || "Baixa", impacto: impacto || "Baixo" });
+        } else if (tipo === "anexo") {
+          const [nome, descricao] = valor.split("|");
+          newData.anexos.push({ id: campo, nome, descricao: descricao || "" });
+        }
+      });
+      data = newData; render(); showSaved();
+    };
+    reader.readAsText(file);
+  }
+  e.target.value = "";
+});
+
+document.getElementById("toastUndo").addEventListener("click", () => {
+  undo();
+  document.getElementById("toast").classList.remove("show");
+});
+
+document.addEventListener("keydown", e => {
+  if ((e.ctrlKey || e.metaKey) && e.key === "z" && !e.target.matches("input, textarea, select")) {
+    e.preventDefault();
+    if (undoStack.length > 0) {
+      undo();
+      showToast("Ação desfeita", false);
+    }
+  }
+});
+
+function escHtml(str) {
+  if (!str) return "";
+  return String(str).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+}
+
+render();
+</script>
+</body>
+</html>
